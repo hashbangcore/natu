@@ -5,7 +5,8 @@ use clap::{Parser, Subcommand};
     name = "rave",
     author,
     version,
-    about = "CLI for interacting with language models"
+    about = "CLI for interacting with language models",
+    disable_help_subcommand = true
 )]
 pub struct Cli {
     /// Prompt passed to the language model
