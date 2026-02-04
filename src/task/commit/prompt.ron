@@ -1,5 +1,0 @@
-Prompts(
-    convention: "src/task/commit/prompts/convention.txt",
-    instruction: "src/task/commit/prompts/instruction.txt",
-    skeleton: "src/task/commit/prompts/skeleton.txt"
-)

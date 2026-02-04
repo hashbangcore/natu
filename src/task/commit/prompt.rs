@@ -1,20 +1,15 @@
-#![allow(unused)]
-
-use ron::de::from_str;
-use serde::Deserialize;
-use std::fs;
 use std::process::Command;
 
-#[derive(Deserialize)]
-struct Prompts {
-    convention: String,
-    instruction: String,
-    skeleton: String,
+fn prompt_instruction() -> &'static str {
+    include_str!("prompts/instruction.txt")
 }
 
-fn expand_prompt(path: &str) -> String {
-    fs::read_to_string(path)
-        .unwrap_or_else(|_| format!("Error: No se pudo leer el archivo {}", path))
+fn prompt_convention() -> &'static str {
+    include_str!("prompts/convention.txt")
+}
+
+fn prompt_skeleton() -> &'static str {
+    include_str!("prompts/skeleton.txt")
 }
 
 fn cover(title: &str, content: &str) -> String {
@@ -27,31 +22,26 @@ fn staged_changes() -> String {
 
     match output {
         Ok(out) if out.status.success() => String::from_utf8(out.stdout)
-            .unwrap_or_else(|e| format!("Error UTF-8 en git diff --staged: {e}")),
+            .unwrap_or_else(|e| format!("UTF-8 error in git diff --staged: {e}")),
         Ok(out) => {
             let err = String::from_utf8_lossy(&out.stderr);
-            format!("git diff --staged falló:\n{err}")
+            format!("git diff --staged failed:\n{err}")
         }
-        Err(e) => format!("No se pudo ejecutar git diff --staged: {e}"),
+        Err(e) => format!("Failed to execute git diff --staged: {e}"),
     }
 }
 
 pub fn generate(hint: Option<&str>) -> String {
-    let user_hint = match hint {
-        Some(h) => h,
-        None => "",
-    };
+    let user_hint = hint.unwrap_or("");
 
-    let ron_data = include_str!("prompt.ron");
-    let p: Prompts = from_str(ron_data).expect("Error parseando RON");
-    let context = String::from("contexto del repositorio");
+    let context = "repository context";
     let staged_changes = staged_changes();
 
     let sections = [
-        ("INSTRUCTION", expand_prompt(&p.instruction)),
-        ("CONVENTION", expand_prompt(&p.convention)),
-        ("SKELETON", expand_prompt(&p.skeleton)),
-        ("PROJECT CONTEXT", context),
+        ("INSTRUCTION", prompt_instruction().to_string()),
+        ("CONVENTION", prompt_convention().to_string()),
+        ("SKELETON", prompt_skeleton().to_string()),
+        ("PROJECT CONTEXT", context.to_string()),
         ("USER HINT", user_hint.to_string()),
         ("STAGED CHANGES", staged_changes),
     ];
