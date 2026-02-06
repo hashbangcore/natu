@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::io;
 use std::sync::OnceLock;
 

@@ -1,6 +1,7 @@
 mod core;
 mod task;
 
+use chrono::Local;
 use clap::Parser;
 use core::interfaz;
 use std::env;
@@ -65,29 +66,41 @@ async fn generate_commit(
     Ok(())
 }
 
+fn capitalize(s: &str) -> String {
+    s.get(0..1).unwrap_or("").to_uppercase() + s.get(1..).unwrap_or("")
+}
+
+fn current_datetime() -> String {
+    Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
 async fn send_chat(
     ctx: &core::CliContext,
     request: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
+    let preamble = format!(
+        "LLM name: Netero\nUser name: {}\nDate and hour: {}\n",
+        capitalize(&user),
+        current_datetime()
+    );
 
     let prompt = if ctx.stdin.trim().is_empty() {
-        format!(
-            "== USER REQUEST ==\n{}\n== END USER REQUEST ==",
-            request.trim()
-        )
+        format!("User request:\n {}\n", request.trim())
     } else {
         format!(
-            "== STDIN FILE ==\n{}\n== END STDIN FILE ==\n\n== USER REQUEST ==\n{}\n== END USER REQUEST ==",
-            ctx.stdin.trim(),
-            request.trim()
+            "== USER REQUEST ==\n{}\n== END USER REQUEST ==\n\n== STDIN FILE ==\n{}\n== END STDIN FILE ==\n",
+            request.trim(),
+            ctx.stdin.trim()
         )
     };
 
-    let response = ctx.ai.complete(&prompt).await?;
+    let wrapper = format!("{}\n{}", preamble, prompt);
+
+    let response = ctx.ai.complete(&wrapper).await?;
 
     if ctx.verbose {
-        println!("\x1b[1m{}:\x1b[0m\n\n{}\n", user.to_uppercase(), prompt);
+        println!("\x1b[1m{}:\x1b[0m\n\n{}\n", user.to_uppercase(), wrapper);
         println!(
             "\x1b[1m{}:\x1b[0m\n\n{}",
             ctx.provider.to_uppercase(),
