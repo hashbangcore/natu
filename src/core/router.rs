@@ -27,7 +27,8 @@ impl Service {
             _ => todo!("{}", provider),
         };
 
-        let apikey = envar.map(|var| std::env::var(var).expect("API key environment variable not found"));
+        let apikey =
+            envar.map(|var| std::env::var(var).expect("API key environment variable not found"));
 
         Self {
             http: Client::new(),
