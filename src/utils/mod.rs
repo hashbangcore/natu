@@ -1,4 +1,5 @@
 use chrono::Local;
+use std::env;
 use std::io::{self, IsTerminal, Read};
 
 pub fn get_stdin() -> String {
@@ -8,6 +9,11 @@ pub fn get_stdin() -> String {
         io::stdin().read_to_string(&mut input).unwrap();
     }
     return input;
+}
+
+pub fn get_user() -> String {
+    let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
+    capitalize(&user)
 }
 
 pub fn current_datetime() -> String {

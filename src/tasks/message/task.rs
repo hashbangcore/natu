@@ -1,16 +1,16 @@
 use crate::core;
 use crate::utils;
-use std::env;
 
 pub async fn generate_message(
     ctx: &core::CliContext,
     request: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
+    let user = utils::get_user();
+    let datetime = utils::current_datetime();
+
     let preamble = format!(
         "LLM name: Netero\nUser name: {}\nDate and hour: {}\n",
-        utils::capitalize(&user),
-        utils::current_datetime()
+        user, datetime
     );
 
     let prompt = if ctx.stdin.trim().is_empty() {
