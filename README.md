@@ -2,7 +2,7 @@
 
 A command-line LLM assistant written in Rust, designed for terminal-centric workflows.
 
-**Also available in Spanish:** [Ver README en español](docs/readme.es.md)
+**Also available in Spanish:** [Ver README en español](docs/lang/readme.es.md)
 
 ## Project status
 

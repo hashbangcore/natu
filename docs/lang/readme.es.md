@@ -113,4 +113,4 @@ ss -tulpen | netero "Resume los sockets de escucha activos" | mdless
 
 ## Licencia
 
-BSD 2-Cláusula
+BSD 2-Clause
