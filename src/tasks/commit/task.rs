@@ -36,7 +36,7 @@ fn staged_changes() -> String {
             "echo '*GIT LOG*' && git log --oneline -10",
             "git status -s",
             "git status",
-            "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present && git diff --staged'",
+            "git diff --cached --quiet && echo 'No staged changes' || echo 'Staged changes present' && git diff --staged",
         ])
         .output();
 
