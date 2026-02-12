@@ -1,9 +1,5 @@
-#![allow(unused_imports)]
-
-pub mod interfaz;
+pub mod interface;
 mod router;
-pub mod store;
-mod types;
 
-pub use router::*;
-pub use types::*;
+pub use router::Service;
+pub use interface::{Cli, Commands};

@@ -76,7 +76,7 @@ fn generate(hint: Option<&str>) -> String {
 
 pub async fn generate_commit(
     service: &core::Service,
-    args: &core::interfaz::Cli,
+    args: &core::Cli,
     hint: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let prompt = generate(hint);

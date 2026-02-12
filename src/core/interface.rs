@@ -15,10 +15,6 @@ pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
 
-    /// Language model provider
-    #[arg(long, short, default_value = "codestral")]
-    pub provider: String,
-
     /// Enable verbose output
     #[arg(short, long, global = true)]
     pub verbose: bool,

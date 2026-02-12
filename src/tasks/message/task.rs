@@ -3,7 +3,7 @@ use crate::utils;
 
 pub async fn generate_message(
     service: &core::Service,
-    args: &core::interfaz::Cli,
+    args: &core::Cli,
     request: &str,
     stdin: String,
 ) -> Result<(), Box<dyn std::error::Error>> {

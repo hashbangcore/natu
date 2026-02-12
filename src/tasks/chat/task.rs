@@ -55,7 +55,7 @@ DATETIME: {}
     )
 }
 
-pub async fn connect(service: &core::Service, args: &core::interfaz::Cli) {
+pub async fn connect(service: &core::Service, args: &core::Cli) {
     let provider = args.provider.clone();
     //let provider = "codestral".to_string();
     let mut history: Vec<String> = Vec::new();
