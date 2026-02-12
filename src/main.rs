@@ -30,7 +30,8 @@ async fn execute(
             commit::generate(service, args, hint.as_deref()).await?
         }
         Some(core::Commands::Prompt { input }) => {
-            message::generate(service, args, &input, stdin).await?
+            let input_text = input.join(" ");
+            message::generate(service, args, &input_text, stdin).await?
         }
         Some(core::Commands::Chat) => chat::generate(service, args).await,
         Some(core::Commands::Completion { shell }) => {
@@ -38,10 +39,11 @@ async fn execute(
             generate(*shell, &mut cmd, "netero", &mut std::io::stdout());
         }
         None => {
-            if let Some(prompt) = args.prompt.as_deref() {
-                message::generate(service, args, prompt, stdin).await?;
-            } else {
+            if args.prompt.is_empty() {
                 chat::generate(service, args).await;
+            } else {
+                let prompt_text = args.prompt.join(" ");
+                message::generate(service, args, &prompt_text, stdin).await?;
             }
         }
     }

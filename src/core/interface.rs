@@ -10,7 +10,7 @@ use clap::{Parser, Subcommand};
 )]
 pub struct Cli {
     /// Prompt passed to the language model
-    pub prompt: Option<String>,
+    pub prompt: Vec<String>,
 
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -34,7 +34,7 @@ pub enum Commands {
     /// Process a single prompt
     Prompt {
         /// Prompt provided via the command line
-        input: String,
+        input: Vec<String>,
     },
 
     /// Generate shell completion
