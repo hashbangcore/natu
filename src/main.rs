@@ -7,7 +7,7 @@ use clap::Parser;
 use clap_complete::generate;
 use tasks::chat;
 use tasks::commit;
-use tasks::message;
+use tasks::pipeline;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -33,7 +33,7 @@ async fn execute(
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");
-            message::connect(service, args, &input_text, stdin).await?
+            pipeline::connect(service, args, &input_text, stdin).await?
         }
         Some(core::Commands::Chat) => chat::connect(service, args, stdin, stdin_is_piped).await,
         Some(core::Commands::Completion { shell }) => {
@@ -45,7 +45,7 @@ async fn execute(
                 chat::connect(service, args, stdin, stdin_is_piped).await;
             } else {
                 let prompt_text = args.prompt.join(" ");
-                message::connect(service, args, &prompt_text, stdin).await?;
+                pipeline::connect(service, args, &prompt_text, stdin).await?;
             }
         }
     }

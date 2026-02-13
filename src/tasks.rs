@@ -1,3 +1,3 @@
 pub mod chat;
 pub mod commit;
-pub mod message;
+pub mod pipeline;
