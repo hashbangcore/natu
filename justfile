@@ -24,8 +24,8 @@ sync:
     git switch development
     git push --all
 
-test hint="¿Cual es tu nombre?":
-    cargo run --bin netero-dev --quiet -- -v "{{ hint }}"
+test:
+    man yes | cargo run --bin netero-dev --quiet -- -v chat 
 
 test-envrc hint="¿Cual es tu nombre?":
     direnv allow

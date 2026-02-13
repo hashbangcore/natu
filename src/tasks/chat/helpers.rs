@@ -5,6 +5,7 @@ pub fn create_prompt(
     history: &str,
     user_input: &str,
     command_output: Option<&str>,
+    stdin_attachment: Option<&str>,
 ) -> String {
     let command_section = match command_output {
         Some(output) => format!(
@@ -16,6 +17,20 @@ pub fn create_prompt(
 :: END COMMAND OUTPUT (SYSTEM) ::
 ",
             output
+        ),
+        None => String::new(),
+    };
+
+    let stdin_section = match stdin_attachment {
+        Some(content) => format!(
+            "
+:: STDIN ATTACHMENT (SYSTEM) ::
+
+{}
+
+:: END STDIN ATTACHMENT (SYSTEM) ::
+",
+            content
         ),
         None => String::new(),
     };
@@ -46,13 +61,15 @@ DATETIME: {}
 
 {}
 
+{}
+
 :: USER MESSAGE ::
 
 {}
 
 :: END USER MESSAGE ::
 ",
-        username, datetime, history, command_section, user_input
+        username, datetime, history, command_section, stdin_section, user_input
     )
 }
 

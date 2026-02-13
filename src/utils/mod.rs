@@ -12,6 +12,10 @@ pub fn get_stdin() -> String {
     return input;
 }
 
+pub fn stdin_is_piped() -> bool {
+    !io::stdin().is_terminal()
+}
+
 pub fn get_user() -> String {
     let user = env::var("USER").unwrap_or_else(|_| "user".to_string());
     capitalize(&user)
