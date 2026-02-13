@@ -134,7 +134,7 @@ fn run_inline_commands(user_input: &str) -> Option<String> {
 }
 
 /// Starts the interactive chat session and handles all supported commands.
-pub async fn connect(service: &core::Service, args: &core::Cli) {
+pub async fn generate_chat(service: &core::Service, args: &core::Cli) {
     let mut history: Vec<String> = Vec::new();
     let mut rl = Editor::<CommandCompleter, DefaultHistory>::new()
         .expect("failed to initialize rustyline editor");

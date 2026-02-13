@@ -27,23 +27,23 @@ async fn execute(
 ) -> Result<(), Box<dyn std::error::Error>> {
     match &args.command {
         Some(core::Commands::Commit { hint }) => {
-            commit::generate(service, args, hint.as_deref()).await?
+            commit::connect(service, args, hint.as_deref()).await?
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");
-            message::generate(service, args, &input_text, stdin).await?
+            message::connect(service, args, &input_text, stdin).await?
         }
-        Some(core::Commands::Chat) => chat::generate(service, args).await,
+        Some(core::Commands::Chat) => chat::connect(service, args).await,
         Some(core::Commands::Completion { shell }) => {
             let mut cmd = core::Cli::command();
             generate(*shell, &mut cmd, "netero", &mut std::io::stdout());
         }
         None => {
             if args.prompt.is_empty() {
-                chat::generate(service, args).await;
+                chat::connect(service, args).await;
             } else {
                 let prompt_text = args.prompt.join(" ");
-                message::generate(service, args, &prompt_text, stdin).await?;
+                message::connect(service, args, &prompt_text, stdin).await?;
             }
         }
     }

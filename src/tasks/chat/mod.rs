@@ -1,4 +1,4 @@
 mod helpers;
 pub mod task;
 
-pub use task::connect as generate;
+pub use task::generate_chat as connect;

@@ -1,3 +1,3 @@
 pub mod task;
 
-pub use task::generate_commit as generate;
+pub use task::generate_commit as connect;

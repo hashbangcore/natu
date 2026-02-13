@@ -1,3 +1,3 @@
 pub mod task;
 
-pub use task::generate_message as generate;
+pub use task::generate_message as connect;
