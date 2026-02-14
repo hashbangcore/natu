@@ -1,16 +1,11 @@
 use crate::core;
 use crate::tasks::render;
 use crate::utils;
-use rustyline::Editor;
-use rustyline::error::ReadlineError;
-use rustyline::history::DefaultHistory;
-use std::fs::File;
-use std::io::{BufRead, BufReader, Write};
 
 use super::commands::{
-    CommandCompleter, handle_add, handle_clean, handle_eval, handle_help, handle_stream,
-    handle_trans,
+    handle_add, handle_clean, handle_eval, handle_help, handle_stream, handle_trans,
 };
+use super::input::{new_editor, open_tty_reader, read_user_input};
 use super::inline_exec::run_inline_commands;
 use super::parse::strip_inline_commands;
 use super::prompt::create_prompt;
@@ -30,65 +25,23 @@ pub async fn generate_chat(
         Some(stdin)
     };
     let mut stream_enabled = false;
-    let mut rl = Editor::<CommandCompleter, DefaultHistory>::new()
-        .expect("failed to initialize rustyline editor");
-    rl.set_helper(Some(CommandCompleter::new(vec![
-        "/clean", "/trans", "/eval", "/help", "/stream", "/add",
-    ])));
-    let mut tty_reader = if stdin_is_piped {
-        match File::open("/dev/tty") {
-            Ok(file) => Some(BufReader::new(file)),
-            Err(err) => {
-                eprintln!("Error: {}", err);
-                return;
-            }
+    let mut rl = new_editor();
+    let mut tty_reader = match open_tty_reader(stdin_is_piped) {
+        Ok(reader) => reader,
+        Err(err) => {
+            eprintln!("{}", err);
+            return;
         }
-    } else {
-        None
     };
 
     loop {
-        let user_input = if let Some(reader) = tty_reader.as_mut() {
-            let mut stdout = std::io::stdout();
-            if stdout
-                .write_all(b"\x1b[36m\xE2\x9E\x9C ")
-                .is_err()
-            {
+        let user_input = match read_user_input(&mut rl, &mut tty_reader) {
+            Ok(Some(line)) => line,
+            Ok(None) => break,
+            Err(err) => {
+                eprintln!("{}", err);
                 break;
             }
-            if stdout.flush().is_err() {
-                break;
-            }
-            let mut line = String::new();
-            match reader.read_line(&mut line) {
-                Ok(0) => break,
-                Ok(_) => {
-                    if stdout.write_all(b"\x1b[0m").is_err() {
-                        break;
-                    }
-                    line.trim().to_string()
-                }
-                Err(err) => {
-                    eprintln!("Error: {}", err);
-                    break;
-                }
-            }
-        } else {
-            println!("\x1b[36m");
-            let readline = rl.readline("➜ ");
-            let user_input = match readline {
-                Ok(line) => {
-                    rl.add_history_entry(line.as_str()).unwrap();
-                    line.trim().to_string()
-                }
-                Err(ReadlineError::Interrupted) | Err(ReadlineError::Eof) => break,
-                Err(err) => {
-                    eprintln!("Error: {:?}", err);
-                    break;
-                }
-            };
-            println!("\x1b[0m");
-            user_input
         };
 
         if user_input.is_empty() {

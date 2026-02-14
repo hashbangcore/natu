@@ -1,6 +1,7 @@
 mod commands;
 mod eval;
 mod inline_exec;
+mod input;
 mod lang;
 mod parse;
 mod prompt;
