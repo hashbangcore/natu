@@ -261,22 +261,22 @@ pub async fn handle_save(
     let datetime = utils::current_datetime();
     let user_lang = utils::get_user_lang();
     let history_text = history.join("\n");
-    let hint_line = if raw_text.is_empty() {
-        "Hint: (none)".to_string()
-    } else {
-        format!("Hint (required): {raw_text}")
-    };
-
-    let prompt = format!(
-        "Write an informe for the user.\n\
-{hint_line}\n\
-If a Hint is present, it is mandatory and should override other topics.\n\
+    let prompt = if raw_text.is_empty() {
+        format!(
+            "Write an informe for the user.\n\
 Use the same language as the user.\n\
 User language: {user_lang}\n\
 Do not add footers, notes, or meta commentary.\n\
 Chat history:\n\
 {history_text}\n"
-    );
+        )
+    } else {
+        format!(
+            "Hint (required): {raw_text}\n\
+Chat history:\n\
+{history_text}\n"
+        )
+    };
 
     if args.verbose {
         println!("\x1b[32m{}\x1b[0m", prompt);
