@@ -1,12 +1,12 @@
-/// Extracts inline command substitutions of the form `$(...)` from a user input string.
+/// Extracts inline command substitutions of the form `#!(...)` from a user input string.
 pub fn extract_inline_commands(input: &str) -> Vec<String> {
     let bytes = input.as_bytes();
     let mut commands = Vec::new();
     let mut i = 0;
 
-    while i + 1 < bytes.len() {
-        if bytes[i] == b'$' && bytes[i + 1] == b'(' {
-            let mut j = i + 2;
+    while i + 2 < bytes.len() {
+        if bytes[i] == b'#' && bytes[i + 1] == b'!' && bytes[i + 2] == b'(' {
+            let mut j = i + 3;
             let mut depth = 1;
 
             while j < bytes.len() {
@@ -22,7 +22,7 @@ pub fn extract_inline_commands(input: &str) -> Vec<String> {
             }
 
             if depth == 0 {
-                let cmd = input[i + 2..j].trim().to_string();
+                let cmd = input[i + 3..j].trim().to_string();
                 if !cmd.is_empty() {
                     commands.push(cmd);
                 }
@@ -38,15 +38,15 @@ pub fn extract_inline_commands(input: &str) -> Vec<String> {
     commands
 }
 
-/// Removes inline command substitutions of the form `$(...)` from the input and trims the result.
+/// Removes inline command substitutions of the form `#!(...)` from the input and trims the result.
 pub fn strip_inline_commands(input: &str) -> String {
     let bytes = input.as_bytes();
     let mut output = String::with_capacity(bytes.len());
     let mut i = 0;
 
     while i < bytes.len() {
-        if i + 1 < bytes.len() && bytes[i] == b'$' && bytes[i + 1] == b'(' {
-            let mut j = i + 2;
+        if i + 2 < bytes.len() && bytes[i] == b'#' && bytes[i + 1] == b'!' && bytes[i + 2] == b'(' {
+            let mut j = i + 3;
             let mut depth = 1;
 
             while j < bytes.len() {
