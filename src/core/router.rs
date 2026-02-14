@@ -53,7 +53,7 @@ impl Service {
             .filter(|v| !v.trim().is_empty());
 
         if args.verbose {
-            println!("modelo: {:#?}\nurl: {:#?}\nkey: {:#?}", model, url, key);
+            println!("modelo: {:#?}\nurl: {:#?}\n", model, url);
         }
 
         let (endpoint, model, apikey) = match (url, model) {
