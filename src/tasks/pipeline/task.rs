@@ -9,12 +9,12 @@ pub async fn generate_message(
     request: &str,
     stdin: String,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let user_lang = utils::get_user_lang();
     let user = utils::get_user();
-    let datetime = utils::current_datetime();
     let (cleaned_request, attachments) = attach::extract_attachments_from_input(request);
     let attachment_block = attach::format_attachments(&attachments);
 
-    let preamble = format!("LLM name: Netero\nUser name: {}\nDate and hour: {}", user, datetime);
+    let preamble = format!("USER LANG: {}", user_lang);
 
     let stdin_with_files = if let Some(extra) = attachment_block.as_deref() {
         format!("{stdin}{extra}")
