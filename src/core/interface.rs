@@ -32,7 +32,8 @@ pub enum Commands {
     /// Generate a commit message
     Commit {
         /// Optional prompt used as commit context
-        hint: Option<String>,
+        #[arg(trailing_var_arg = true)]
+        hint: Vec<String>,
         /// Path to a custom commit convention file
         #[arg(short = 'c', long, env = "NETERO_CONVENTION")]
         convention: Option<String>,

@@ -44,7 +44,12 @@ async fn execute(
 ) -> Result<(), Box<dyn std::error::Error>> {
     match &args.command {
         Some(core::Commands::Commit { hint, convention }) => {
-            commit::connect(service, args, hint.as_deref(), convention.as_deref()).await?
+            let hint_text = if hint.is_empty() {
+                None
+            } else {
+                Some(hint.join(" "))
+            };
+            commit::connect(service, args, hint_text.as_deref(), convention.as_deref()).await?
         }
         Some(core::Commands::Prompt { input }) => {
             let input_text = input.join(" ");
