@@ -21,6 +21,18 @@ pub fn get_user() -> String {
     capitalize(&user)
 }
 
+pub fn get_user_lang() -> String {
+    for key in ["LC_ALL", "LC_MESSAGES", "LANG"] {
+        if let Ok(value) = env::var(key) {
+            let trimmed = value.trim();
+            if !trimmed.is_empty() {
+                return trimmed.to_string();
+            }
+        }
+    }
+    "unknown".to_string()
+}
+
 pub fn current_datetime() -> String {
     Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
 }

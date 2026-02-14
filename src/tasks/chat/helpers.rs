@@ -2,6 +2,7 @@
 pub fn create_prompt(
     username: &str,
     datetime: &str,
+    user_lang: &str,
     history: &str,
     user_input: &str,
     command_output: Option<&str>,
@@ -35,12 +36,13 @@ pub fn create_prompt(
         None => String::new(),
     };
 
+    // NOTE: user_lang should reflect the OS locale (e.g., LANG/LC_ALL).
     format!(
         "
 LLM ROL: Conversational terminal assistant
 USERNAME: {}
 DATETIME: {}
-
+USER LANG: {}
 
 :: INSTRUCTION (SYSTEM) ::
 
@@ -69,7 +71,13 @@ DATETIME: {}
 
 :: END USER MESSAGE ::
 ",
-        username, datetime, history, command_section, stdin_section, user_input
+        username,
+        datetime,
+        user_lang,
+        history,
+        command_section,
+        stdin_section,
+        user_input
     )
 }
 

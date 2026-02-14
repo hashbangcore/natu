@@ -363,6 +363,7 @@ Do not interpret lang:lang as literal text.\n\nTEXT:\n{}",
         let prompt = create_prompt(
             &utils::get_user(),
             &utils::current_datetime(),
+            &utils::get_user_lang(),
             &dialog,
             &cleaned_input,
             command_output.as_deref(),
