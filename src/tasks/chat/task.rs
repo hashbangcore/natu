@@ -11,7 +11,7 @@ use rustyline::hint::Hinter;
 use rustyline::history::DefaultHistory;
 use rustyline::validate::Validator;
 use serde_json::json;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Write};
 use std::process::Command;
 
@@ -212,7 +212,7 @@ pub async fn generate_chat(
     let mut rl = Editor::<CommandCompleter, DefaultHistory>::new()
         .expect("failed to initialize rustyline editor");
     rl.set_helper(Some(CommandCompleter {
-        commands: vec!["/clean", "/trans", "/eval", "/help", "/stream"],
+        commands: vec!["/clean", "/trans", "/eval", "/help", "/stream", "/add"],
     }));
     let mut tty_reader = if stdin_is_piped {
         match File::open("/dev/tty") {
@@ -286,10 +286,37 @@ pub async fn generate_chat(
                 "\nCommands:\n\
 /help  Show this help message\n\
 /clean Clear chat history\n\
+/add   Attach file contents to chat context\n\
 /trans Translate text (uses LLM)\n\
 /eval  Evaluate arithmetic expression\n\
 /stream [on|off] Toggle streaming output\n"
             );
+            continue;
+        }
+
+        if let Some(rest) = user_input.strip_prefix("/add") {
+            let mut path = rest.trim();
+            if (path.starts_with('"') && path.ends_with('"'))
+                || (path.starts_with('\'') && path.ends_with('\''))
+            {
+                path = &path[1..path.len().saturating_sub(1)];
+            }
+
+            if path.is_empty() {
+                println!("\nUsage: /add <path>");
+                continue;
+            }
+
+            match fs::read_to_string(path) {
+                Ok(content) => {
+                    pending_stdin = Some(content.clone());
+                    history.push(format!("Attachment: {}\n", content));
+                    println!("\nadded: {}", path);
+                }
+                Err(err) => {
+                    eprintln!("\nError reading {}: {}", path, err);
+                }
+            }
             continue;
         }
 
