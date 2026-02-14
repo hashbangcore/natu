@@ -1,127 +1,20 @@
 use crate::core;
 use crate::utils;
 use futures_util::StreamExt;
-use rustyline::Context;
 use rustyline::Editor;
-use rustyline::Helper;
-use rustyline::completion::{Completer, FilenameCompleter, Pair};
 use rustyline::error::ReadlineError;
-use rustyline::highlight::Highlighter;
-use rustyline::hint::Hinter;
 use rustyline::history::DefaultHistory;
-use rustyline::validate::Validator;
 use serde_json::json;
-use std::fs::{self, File};
+use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::process::Command;
 
-use super::helpers::create_prompt;
-use super::helpers::eval_expr;
-use super::helpers::extract_inline_commands;
-use super::helpers::format_eval_error;
-use super::helpers::strip_inline_commands;
-
-/// Provides command name completions for slash-prefixed commands in the prompt.
-struct CommandCompleter {
-    /// The set of slash commands available for completion.
-    commands: Vec<&'static str>,
-    /// Filename completer for /add paths.
-    file_completer: FilenameCompleter,
-}
-
-/// Enables rustyline helper integration for slash command completion.
-impl Helper for CommandCompleter {}
-/// Disables hints while still fulfilling the rustyline helper contract.
-impl Hinter for CommandCompleter {
-    type Hint = String;
-
-    /// Returns no hint so user input remains unobstructed.
-    fn hint(&self, _line: &str, _pos: usize, _ctx: &Context<'_>) -> Option<String> {
-        None
-    }
-}
-
-/// Disables highlighting while still fulfilling the rustyline helper contract.
-impl Highlighter for CommandCompleter {}
-
-/// Disables validation while still fulfilling the rustyline helper contract.
-impl Validator for CommandCompleter {}
-
-/// Implements slash command completion for rustyline.
-impl Completer for CommandCompleter {
-    type Candidate = Pair;
-
-    /// Returns completions when the current token starts with `/`.
-    fn complete(
-        &self,
-        line: &str,
-        pos: usize,
-        _ctx: &Context<'_>,
-    ) -> Result<(usize, Vec<Pair>), ReadlineError> {
-        if line.starts_with("/add ") && pos >= 5 {
-            return self.file_completer.complete(line, pos, _ctx);
-        }
-        let start = line[..pos]
-            .rfind(|c: char| c.is_whitespace())
-            .map(|idx| idx + 1)
-            .unwrap_or(0);
-        let prefix = &line[start..pos];
-
-        if !prefix.starts_with('/') {
-            return Ok((pos, Vec::new()));
-        }
-
-        let matches = self
-            .commands
-            .iter()
-            .filter(|cmd| cmd.starts_with(prefix))
-            .map(|cmd| Pair {
-                display: cmd.to_string(),
-                replacement: cmd.to_string(),
-            })
-            .collect();
-
-        Ok((start, matches))
-    }
-}
-
-fn split_args(input: &str) -> Vec<String> {
-    let mut args = Vec::new();
-    let mut current = String::new();
-    let mut quote: Option<char> = None;
-
-    for ch in input.chars() {
-        if let Some(q) = quote {
-            if ch == q {
-                quote = None;
-            } else {
-                current.push(ch);
-            }
-            continue;
-        }
-
-        if ch == '"' || ch == '\'' {
-            quote = Some(ch);
-            continue;
-        }
-
-        if ch.is_whitespace() {
-            if !current.is_empty() {
-                args.push(current.clone());
-                current.clear();
-            }
-            continue;
-        }
-
-        current.push(ch);
-    }
-
-    if !current.is_empty() {
-        args.push(current);
-    }
-
-    args
-}
+use super::commands::{
+    CommandCompleter, handle_add, handle_clean, handle_eval, handle_help, handle_stream,
+    handle_trans,
+};
+use super::parse::{extract_inline_commands, strip_inline_commands};
+use super::prompt::create_prompt;
 
 /// Executes inline shell commands and returns a formatted output section, if any.
 fn run_inline_commands(user_input: &str) -> Option<String> {
@@ -253,10 +146,9 @@ pub async fn generate_chat(
     let mut stream_enabled = false;
     let mut rl = Editor::<CommandCompleter, DefaultHistory>::new()
         .expect("failed to initialize rustyline editor");
-    rl.set_helper(Some(CommandCompleter {
-        commands: vec!["/clean", "/trans", "/eval", "/help", "/stream", "/add"],
-        file_completer: FilenameCompleter::new(),
-    }));
+    rl.set_helper(Some(CommandCompleter::new(vec![
+        "/clean", "/trans", "/eval", "/help", "/stream", "/add",
+    ])));
     let mut tty_reader = if stdin_is_piped {
         match File::open("/dev/tty") {
             Ok(file) => Some(BufReader::new(file)),
@@ -317,163 +209,32 @@ pub async fn generate_chat(
             continue;
         }
 
-        if user_input == "/clean" {
-            history.clear();
-            print!("\x1b[2J\x1b[H");
-            let _ = std::io::stdout().flush();
+        if handle_clean(&user_input, &mut history) {
             continue;
         }
 
-        if user_input == "/help" {
-            println!(
-                "\nCommands:\n\
-/help  Show this help message\n\
-/clean Clear chat history\n\
-/add   Attach file contents to chat context\n\
-/trans Translate text (uses LLM)\n\
-/eval  Evaluate arithmetic expression\n\
-/stream [on|off] Toggle streaming output\n"
-            );
+        if handle_help(&user_input) {
             continue;
         }
 
-        if let Some(rest) = user_input.strip_prefix("/add") {
-            let args = split_args(rest.trim());
-            if args.is_empty() {
-                println!("\nUsage: /add <path> [path2 path3 ...]");
-                continue;
-            }
-
-            let mut attachment = String::new();
-            for path in args {
-                match fs::read_to_string(&path) {
-                    Ok(content) => {
-                        attachment.push_str("\n-- FILE: ");
-                        attachment.push_str(&path);
-                        attachment.push_str(" --\n");
-                        attachment.push_str(&content);
-                        attachment.push('\n');
-                        history.push(format!("Attachment: {}\n{}\n", path, content));
-                        println!("\nadded: {}", path);
-                    }
-                    Err(err) => {
-                        eprintln!("\nError reading {}: {}", path, err);
-                    }
-                }
-            }
-
-            if !attachment.is_empty() {
-                pending_stdin = Some(attachment);
-            }
+        if handle_add(&user_input, &mut history, &mut pending_stdin) {
             continue;
         }
 
-        if let Some(rest) = user_input.strip_prefix("/stream") {
-            let mode = rest.trim().to_lowercase();
-            if mode == "on" {
-                stream_enabled = true;
-                println!("\nstream: on");
-            } else if mode == "off" {
-                stream_enabled = false;
-                println!("\nstream: off");
-            } else {
-                println!("\nUsage: /stream on|off");
-            }
+        if handle_stream(&user_input, &mut stream_enabled) {
             continue;
         }
 
-        if let Some(rest) = user_input.strip_prefix("/trans") {
-            let raw_text = strip_inline_commands(rest).trim().to_string();
-            if raw_text.is_empty() {
-                println!("\nUsage: /trans [INPUT_LANG:OUTPUT_LANG] <text>");
-                continue;
+        match handle_trans(&user_input, service, args).await {
+            Ok(true) => continue,
+            Ok(false) => {}
+            Err(err) => {
+                eprintln!("{}", err);
+                break;
             }
-
-            let mut input_lang: Option<String> = None;
-            let mut output_lang: Option<String> = None;
-            let mut text = raw_text.as_str();
-
-            let mut parts = raw_text.splitn(2, char::is_whitespace);
-            let first = parts.next().unwrap_or("");
-            if first.contains(':')
-                && first
-                    .chars()
-                    .all(|ch| ch.is_ascii_alphanumeric() || ch == '_' || ch == '-' || ch == ':')
-            {
-                let mut lang_parts = first.splitn(2, ':');
-                let in_lang = lang_parts.next().unwrap_or("").trim();
-                let out_lang = lang_parts.next().unwrap_or("").trim();
-                if !in_lang.is_empty() {
-                    input_lang = Some(in_lang.to_string());
-                }
-                if !out_lang.is_empty() {
-                    output_lang = Some(out_lang.to_string());
-                }
-                if input_lang.is_some() || output_lang.is_some() {
-                    text = parts.next().unwrap_or("").trim();
-                }
-            }
-
-            if text.is_empty() {
-                continue;
-            }
-
-            let user_lang = utils::normalize_lang_tag(&utils::get_user_lang());
-            let target_lang = output_lang
-                .as_deref()
-                .map(utils::normalize_lang_tag)
-                .unwrap_or(user_lang);
-            let source_lang = input_lang
-                .as_deref()
-                .map(utils::normalize_lang_tag)
-                .unwrap_or_else(|| "auto-detect".to_string());
-            let target_lang_name = utils::lang_display_name(&target_lang);
-
-            let prompt = format!(
-                "
-Task: Translate the following text faithfully, preserving its meaning and context.
-Return only the translation. Do not explain or add anything.
-You must translate. Do not choose any other task or language.
-LANG: {}:{}.
-Source language (locked): {}.
-Target language (locked): {}.
-Target language name (locked): {}.
-
-TEXT:
-{}",
-                source_lang, target_lang, source_lang, target_lang, target_lang_name, text
-            );
-
-            if args.verbose {
-                println!("\x1b[32m{}\x1b[0m", prompt);
-            }
-
-            match service.complete(&prompt).await {
-                Ok(text) => {
-                    let output = utils::render_markdown(&text);
-                    println!("\n{}", output);
-                }
-                Err(err) => {
-                    eprintln!("AI error: {}", err);
-                    break;
-                }
-            }
-
-            continue;
         }
 
-        if let Some(rest) = user_input.strip_prefix("/eval") {
-            let expr = strip_inline_commands(rest).trim().to_string();
-            if expr.is_empty() {
-                println!("\nUsage: /eval <expression>");
-                continue;
-            }
-
-            match eval_expr(&expr) {
-                Ok(value) => println!("\n{}", value),
-                Err(err) => println!("\nError: {}", format_eval_error(err)),
-            }
-
+        if handle_eval(&user_input) {
             continue;
         }
 
