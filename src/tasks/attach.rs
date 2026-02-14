@@ -134,3 +134,56 @@ pub fn format_attachments(attachments: &[Attachment]) -> Option<String> {
     }
     Some(out)
 }
+
+fn indent_block(content: &str, prefix: &str) -> String {
+    if content.is_empty() {
+        return String::new();
+    }
+    let mut out = String::new();
+    let mut lines = content.lines().peekable();
+    while let Some(line) = lines.next() {
+        out.push_str(prefix);
+        out.push_str(line);
+        if lines.peek().is_some() {
+            out.push('\n');
+        }
+    }
+    if content.ends_with('\n') {
+        if !out.is_empty() {
+            out.push('\n');
+        }
+        out.push_str(prefix);
+    }
+    out
+}
+
+/// Formats stdin and file attachments into a single attached files block.
+pub fn format_attached_files(
+    stdin: Option<&str>,
+    attachments: &[Attachment],
+) -> Option<String> {
+    let mut sections = Vec::new();
+    if let Some(content) = stdin {
+        if !content.trim().is_empty() {
+            sections.push(format!(
+                "-- FILE: STDIN --\n{}",
+                indent_block(content, "      ")
+            ));
+        }
+    }
+    for attachment in attachments {
+        sections.push(format!(
+            "-- FILE: {} --\n{}",
+            attachment.path,
+            indent_block(&attachment.content, "      ")
+        ));
+    }
+    if sections.is_empty() {
+        return None;
+    }
+    let mut out = String::new();
+    out.push_str(":: ATTACHED FILES ::\n\n");
+    out.push_str(&sections.join("\n\n"));
+    out.push_str("\n\n:: END ATTACHED FILES ::");
+    Some(out)
+}
