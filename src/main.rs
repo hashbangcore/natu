@@ -15,8 +15,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let stdin = utils::get_stdin();
     let args = core::Cli::parse();
 
-    if args.log {
-        core::log::run_log_server().await?;
+    if args.trace && (args.command.is_some() || !args.prompt.is_empty()) {
+        let mut cmd = core::Cli::command();
+        cmd.error(
+            clap::error::ErrorKind::ArgumentConflict,
+            "--trace cannot be used with subcommands or prompt input",
+        )
+        .exit();
+    }
+
+    if args.trace {
+        core::trace::run_trace_server().await?;
         return Ok(());
     }
 

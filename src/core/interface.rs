@@ -19,9 +19,9 @@ pub struct Cli {
     #[arg(short, long, global = true)]
     pub verbose: bool,
 
-    /// Start log server to print raw LLM traffic
-    #[arg(short, long, global = true)]
-    pub log: bool,
+    /// Start a trace server to print raw LLM traffic
+    #[arg(short = 't', long)]
+    pub trace: bool,
 }
 
 #[derive(Subcommand, Debug)]

@@ -1,6 +1,6 @@
 mod config;
 pub mod interface;
-pub mod log;
+pub mod trace;
 mod router;
 
 pub use config::Config;
