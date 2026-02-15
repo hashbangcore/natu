@@ -4,10 +4,15 @@ set unstable := true
 
 default: install
 
+release:
+    just -n release-info
+    just -n release-build
+
 release-info:
     just dist::info
 
 release-build:
+    just dist::tag
     just dist::build
     just dist::artifacts
     just dist::checksum
