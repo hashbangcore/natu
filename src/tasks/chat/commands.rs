@@ -89,9 +89,6 @@ impl Completer for CommandCompleter {
             .map(|idx| idx + 1)
             .unwrap_or(0);
         let token = &line[start..pos];
-        if token.starts_with("./") || token.starts_with("../") || token.starts_with('/') {
-            return self.file_completer.complete(line, pos, ctx);
-        }
         if let Some(inline_start) = find_inline_start(&line[..pos]) {
             if is_inside_inline(&line[..pos], inline_start) {
                 let inline_slice = &line[inline_start..pos];
@@ -134,6 +131,23 @@ impl Completer for CommandCompleter {
                     }
                 }
             }
+        }
+        if start == 0 && token.starts_with('/') {
+            let matches: Vec<Pair> = self
+                .commands
+                .iter()
+                .filter(|cmd| cmd.starts_with(token))
+                .map(|cmd| Pair {
+                    display: cmd.to_string(),
+                    replacement: cmd.to_string(),
+                })
+                .collect();
+            if !matches.is_empty() || token == "/" {
+                return Ok((start, matches));
+            }
+        }
+        if token.starts_with("./") || token.starts_with("../") || token.starts_with('/') {
+            return self.file_completer.complete(line, pos, ctx);
         }
         let prefix = &line[start..pos];
 
