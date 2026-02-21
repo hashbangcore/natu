@@ -6,7 +6,7 @@ ofrece un chat minimalista con expansión de comandos.
 
 Cuanto más hábil seas con las shells, mayor provecho le sacarás a esta herramienta.
 
-**También en inglés:** [Ver README en inglés](../../README.md)
+**También en inglés:** [Ver README en inglés](../../)
 
 ---
 
@@ -280,8 +280,11 @@ netero -v "Explica qué es un mutex en Rust"
 
 ### 8. Inspeccionar prompts enviados (modo depuración)
 
+Netero ejecuta un socket de depuración que escucha todos los prompts enviados
+por instancias en ejecución.
+
 ```sh
-netero --trace "¿Qué es un race condition?"
+netero --trace
 ```
 
 ---

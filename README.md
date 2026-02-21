@@ -6,7 +6,7 @@ and offers a minimal chat with command expansion.
 
 The more skilled you are with shells, the more you will get out of this tool.
 
-**Also in Spanish:** [View README in Spanish](./docs/lang/readme.es.md)
+**Also in Spanish:** [View README in Spanish](./docs/es/)
 
 ---
 
@@ -280,8 +280,10 @@ netero -v "Explain what a mutex is in Rust"
 
 ### 8. Inspect sent prompts (debug mode)
 
+Netero runs a debug socket that listens to all prompts sent by running instances.
+
 ```sh
-netero --trace "What is a race condition?"
+netero --trace
 ```
 
 ---
